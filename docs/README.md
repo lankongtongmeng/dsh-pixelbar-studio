@@ -6,6 +6,7 @@
 - **开工先看** → [WORKFLOW.md](WORKFLOW.md)：从零到「动画在设备上跑起来」的可照做流程
 - 协议细节 → [PROTOCOL.md](PROTOCOL.md)
 - 参考来源与有效性评估 → [REFERENCES.md](REFERENCES.md)
+- **要对外发布时** → [PUBLISH.md](PUBLISH.md)：GitHub → npm → 市场 PR 的完整链路与卡点
 
 ---
 
@@ -284,6 +285,8 @@ docs/
   WORKFLOW.md          制作流程 SOP（开工先看这份）
   PROTOCOL.md          协议参考（已确认部分）
   REFERENCES.md        参考来源与有效性评估
+  PITFALLS.md          踩坑与经验包
+  PUBLISH.md           对外发布流程（GitHub → npm → 市场 PR）
 gifs/
   oga/                 Pepper&Carrot 角色表（CC-BY，见 chars.py 署名）
   anime/               `anims --export` 导出的 GIF

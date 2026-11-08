@@ -461,6 +461,62 @@ POSIX 用 `start_new_session`），它自己 sleep 到点再发时钟命令。�
 
 ---
 
+## 八、对外发布（GitHub / npm / 市场 PR）
+
+> 完整可照做流程见 [PUBLISH.md](PUBLISH.md)。这里只列真正卡住过人的点。
+
+### 8.1 想复用浏览器登录态是死路，别反复试
+
+本机 Chrome 是 Qoom 版，Chrome 127+ 的 **App-Bound Encryption** 让 cookie 读不出来，
+而且强行导入**有损坏用户浏览器配置的风险**（`ego_login_import` 会直接拒绝，并提示可用
+`EGO_LINUX_LOGIN_IMPORT_FORCE=1` 绕过——**不要绕**）。正确做法是让用户做一次授权，
+其余全部自动化。
+
+### 8.2 设备码 15 分钟过期，**过期后再授权无效**
+
+`gh` 的网页登录会打开默认浏览器（本机是 Edge），而用户只能在 Qoom Chrome 里登录，
+所以要自己实现设备码流程 + 用**显式路径**把授权页开进 Chrome。给用户码之后要盯着，
+过期就重发一个 —— 本次第一次就是用户在期限边缘操作，直接 `expired_token`。
+
+### 8.3 npm 发布**强制 2FA**；账号没开 2FA 就只能建 Bypass-2FA token
+
+`npm publish` 报 `403 Two-factor authentication or granular access token with bypass 2fa
+enabled is required`。查 `npm profile get` 若 `tfa: false`，则**根本产生不了 OTP**，
+唯一出路是网页建 **Granular Access Token 并勾 Bypass 2FA**（另需选 `Read and write`
++ **All packages**）。注意该机制 **2027-01 起对「直接发布」失效**，届时改用
+Trusted Publishing（OIDC）。
+
+### 8.4 新包首发会出现 `0.0.0-stage` 占位符，**不是失败**
+
+发布成功后 registry 立刻查会只看到 `0.0.0-stage`，几分钟后 `latest` 才变正式版本号。
+**别在这期间重复发布**；判定是否上线，看 npm 后台 Packages 页比看 registry 快。
+
+### 8.5 `gh` 写不了 AppData —— 但 `.gitconfig` 那条报错是虚的
+
+`gh` 配置目录在 AppData 会被沙箱拒写（`mkdir ... Access is denied`）→ 必须把
+`GH_CONFIG_DIR` 指到工作区、用 `GH_TOKEN` 驱动。而 `gh auth setup-git` 报
+`could not lock config file .../.gitconfig: Permission denied` **可以无视** ——
+`gh repo create --push` 自带凭据，推送照样成功，remote URL 保持干净（不含 token）。
+
+### 8.6 市场 PR 的「仓库满 24 小时」门会红一次，**什么都不用做**
+
+`awesome-dsh-plugin` 的 CI 会因仓库当天新建而失败。但报错信息里写明这项
+**会自动重跑**（`regate.yml` 定时任务），**不要重提、不要 push、不要关了重开**。
+首次向该仓库贡献时 workflow 还可能被挂成 `action_required`（等维护者批准），同属平台行为。
+
+### 8.7 程序化导航会触发 Cloudflare Turnstile，**等几秒会自过**
+
+CDP 驱动 npm 页面跳转时会撞上「正在进行安全验证」。实测等 8~10 秒自动放行，
+不需要用户点。
+
+### 8.8 开着 CDP 调试端口的浏览器，**任务结束必须关掉**
+
+`--remote-debugging-port` 等于把浏览器控制权向本机全部程序敞开。用完必须关掉，
+让用户重新正常启动。另：用 `--user-data-dir` 显式指向原配置目录，否则会开出一个
+空的新浏览器，让用户以为数据丢了。
+
+---
+
 ## 附：这台机器上的额外环境坑
 
 - **DSH 沙箱**：`java.exe` 写 `%LOCALAPPDATA%\Temp` 与 `%APPDATA%` 一律 AccessDenied（cmd / pwsh / node 可写）→ 任何把数据目录放系统临时目录的工具都会受影响。npm 默认缓存被拒会报 EPERM，看起来像网络问题。

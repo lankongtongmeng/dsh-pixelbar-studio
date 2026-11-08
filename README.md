@@ -165,6 +165,7 @@ pixelbar_calib { "card": true, "dwell": 3 }
 | [docs/README.md](docs/README.md) | 命令行工具包完整手册（26 个子命令） |
 | [docs/PROTOCOL.md](docs/PROTOCOL.md) | 协议细节（以此为准） |
 | [docs/REFERENCES.md](docs/REFERENCES.md) | 来源分级、方法论复盘、与社区的相对位置 |
+| [docs/PUBLISH.md](docs/PUBLISH.md) | **对外发布流程**（GitHub → npm → 市场 PR，含全部卡点） |
 | [NOTICE.md](NOTICE.md) | 第三方署名与授权 |
 
 本插件自带的 Python 工具包也可以**脱离 DSH 单独用**：

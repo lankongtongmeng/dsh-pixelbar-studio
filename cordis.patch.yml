@@ -1,0 +1,10 @@
+# dsh-pixelbar-studio bundle patch：一个 insert 注册本插件。
+#
+# 约定（从已装社区插件读源码确认）：
+#   - insert.name 必须是【包名】，profile 的 node_modules 会据此解析到 main（lib/index.js）；
+#   - insert.id 必须与入口导出的 cordis `name`（'pixelbar-studio'）一致；
+#   - 不在包里写 config 块——值走 lib/index.js 的默认值，需要覆盖时由用户自己 profile 的
+#     cordis.patch.yml 用 `- id: pixelbar-studio` + `config:` 注入（id 定向，非 insert）。
+- insert:
+    - id: pixelbar-studio
+      name: 'dsh-pixelbar-studio'

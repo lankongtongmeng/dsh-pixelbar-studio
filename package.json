@@ -1,0 +1,63 @@
+{
+  "name": "dsh-pixelbar-studio",
+  "version": "0.1.0",
+  "description": "DSH 插件：把花再 Halo PixelBar 的 256×32 点阵屏变成可创作画布——推自定义位图、GIF 动画、像素角色行走场景，带环境自检与制作管线。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "pixelbar/*.py",
+    "pixelbar/anims.json",
+    "pixelbar.py",
+    "pyproject.toml",
+    "run.cmd",
+    "cordis.patch.yml",
+    "docs",
+    "wiretest/captures.json",
+    "gifs/oga/Pepper_publish..png",
+    "gifs/oga/carrot..png",
+    "gifs/oga/coriander_publish..png",
+    "gifs/oga/saffron_publish..png",
+    "gifs/oga/shichimi_publish..png",
+    "README.md",
+    "NOTICE.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "halo-pixelbar",
+    "pixelbar",
+    "edifier",
+    "pixel-display",
+    "bitmap",
+    "animation",
+    "pixel-art",
+    "hid"
+  ],
+  "author": "马鹿虾 (lankongtongmeng)",
+  "license": "MIT",
+  "homepage": "https://github.com/lankongtongmeng/dsh-pixelbar-studio#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lankongtongmeng/dsh-pixelbar-studio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lankongtongmeng/dsh-pixelbar-studio/issues"
+  },
+  "engines": {
+    "node": ">=18",
+    "dsh": ">=0.2.1-rc.2 <0.3.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

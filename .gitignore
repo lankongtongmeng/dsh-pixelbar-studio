@@ -1,0 +1,54 @@
+# 默认忽略一切，再逐项放行。
+#
+# 为什么用白名单而不是黑名单：这个目录里混着
+#   - tempohub_setup.exe（312MB 官方安装包）与 tempohub_files/（官方 TempoHub 解包）
+#   - HaloPixelToolBox / OpenRGB / ref-claude-pixelbar / community（他人仓库快照）
+#   - gifs/ 下约 1900 张第三方 GIF
+# 黑名单漏一条就可能把官方二进制或他人代码提交上去。所以反过来写。
+/*
+!.gitignore
+!LICENSE
+!NOTICE.md
+!README.md
+!package.json
+!cordis.patch.yml
+!pyproject.toml
+!run.cmd
+!pixelbar.py
+!lib/
+!pixelbar/
+!docs/
+!tools/
+!wiretest/
+!gifs/
+
+# gifs/ 下只放行运行必需的 5 张角色表（CC-BY，见 NOTICE.md）
+gifs/*
+!gifs/oga/
+gifs/oga/*
+!gifs/oga/Pepper_publish..png
+!gifs/oga/carrot..png
+!gifs/oga/coriander_publish..png
+!gifs/oga/saffron_publish..png
+!gifs/oga/shichimi_publish..png
+
+# 运行时垃圾
+__pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+*.log
+
+# 本地产出：预览图 / 导出 / 临时文件（都不进仓库）
+preview.png
+faces.png
+*._preview.png
+gifs/anim_prev/
+gifs/chars/
+gifs/rows/
+gifs/prev/
+gifs/montage*/
+gifs/anime/
+gifs/gc/
+gifs/wide/
+*.bin

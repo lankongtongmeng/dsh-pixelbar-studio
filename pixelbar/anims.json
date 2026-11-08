@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "_comment": "二次元动画配方。改这个文件就能增删动画，不用改 Python。可用 --recipe 追加自己的配方文件。",
+  "sheets": {
+    "pepper":    {"file": "Pepper_publish..png",    "cell": [24, 32], "cols": 3, "rows": 4, "origin": [0, 0]},
+    "carrot":    {"file": "carrot..png",            "cell": [24, 32], "cols": 3, "rows": 4, "origin": [0, 0]},
+    "coriander": {"file": "coriander_publish..png", "cell": [24, 32], "cols": 3, "rows": 4, "origin": [0, 0]},
+    "saffron":   {"file": "saffron_publish..png",   "cell": [24, 32], "cols": 3, "rows": 4, "origin": [0, 0]},
+    "shichimi":  {"file": "shichimi_publish..png",  "cell": [24, 32], "cols": 3, "rows": 4, "origin": [0, 0]}
+  },
+  "anims": {
+    "cat":       {"label": "小猫 Carrot 散步", "slot": 2, "style": "ground",  "actors": [{"sheet": "carrot", "row": 1, "x": 116}]},
+    "duo":       {"label": "Pepper 带着猫",   "slot": 3, "style": "ground",  "actors": [{"sheet": "pepper", "row": 0, "x": 74}, {"sheet": "carrot", "row": 1, "x": 122}]},
+    "parade":    {"label": "四人小队",        "slot": 4, "style": "ground",  "actors": [{"sheet": "pepper", "row": 0, "x": 24}, {"sheet": "saffron", "row": 0, "x": 84}, {"sheet": "shichimi", "row": 0, "x": 144}, {"sheet": "coriander", "row": 0, "x": 200}]},
+    "town":      {"label": "小镇天际线",      "slot": 5, "style": "skyline", "actors": [{"sheet": "pepper", "row": 0, "x": 118}]},
+    "night":     {"label": "夜景散步（星星）", "slot": 6, "style": "stars",   "actors": [{"sheet": "saffron", "row": 0, "x": 118}]},
+    "pepper":    {"label": "Pepper 走路",     "slot": null, "style": "ground", "actors": [{"sheet": "pepper", "row": 0, "x": 118}]},
+    "saffron":   {"label": "女巫 Saffron",    "slot": null, "style": "ground", "actors": [{"sheet": "saffron", "row": 0, "x": 120}]},
+    "coriander": {"label": "小仙女 Coriander", "slot": null, "style": "ground", "actors": [{"sheet": "coriander", "row": 0, "x": 119}]},
+    "shichimi":  {"label": "Shichimi",        "slot": null, "style": "ground", "actors": [{"sheet": "shichimi", "row": 0, "x": 121}]},
+    "sakura":    {"label": "樱花飘落",        "slot": null, "style": "petals", "actors": [{"sheet": "coriander", "row": 0, "x": 118}]},
+    "hills":     {"label": "远山漫步",        "slot": null, "style": "hills",  "actors": [{"sheet": "pepper", "row": 0, "x": 118}]}
+  }
+}

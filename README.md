@@ -65,6 +65,19 @@ npm install dsh-pixelbar-studio
 **③ 手动**：把包解到 profile 的 `node_modules\dsh-pixelbar-studio`，再加进
 `dsh.profile.bundles`，重启 DSH。
 
+**④ 本地安装脚本**（从源码目录装，**不跑 `npm install`**，因此不会动到 profile 的依赖树）
+
+```powershell
+node tools/install_to_dsh.mjs              # 装到默认 profile
+node tools/install_to_dsh.mjs --dry        # 只看会做什么
+node tools/install_to_dsh.mjs --profile <目录>
+node tools/install_to_dsh.mjs --uninstall  # 回滚
+```
+
+脚本只做两件事：复制文件 + 往 `dsh.profile.bundles` 追加一行（原 `package.json`
+会备份成 `package.json.bak-before-pixelbar`）。装完用
+`node tools/verify_install.mjs` 可以验证**装好的那一份**能独立工作。
+
 装完在会话里说一句「看看 PixelBar 状态」就能验证——模型会调用 `pixelbar_status`。
 
 ## 环境要求

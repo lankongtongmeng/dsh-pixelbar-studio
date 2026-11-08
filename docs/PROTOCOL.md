@@ -249,7 +249,7 @@ payload = 00 <n> <utf8 bytes>
 ## 10. 验证方法（可复现）
 
 ```bash
-python pixelbar.py selftest          # 27 项离线自检，含 3 组官方抓包逐字节复现
+python pixelbar.py selftest          # 72 项离线自检，含 3 组官方抓包逐字节复现
 python pixelbar.py replay --capture 23   # 原样回放官方抓包 OUT 帧，验证链路
 python pixelbar.py border            # 推 1px 满边框，肉眼确认像素级对齐
 ```

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "halo-pixelbar"
-version = "1.1.0"
-description = "花再 Halo PixelBar 控制工具：点阵屏文本 / 自定义位图 / 多帧动画 / 氛围灯"
+version = "1.2.0"
+description = "花再 Halo PixelBar 控制工具：点阵屏文本 / 自定义位图 / 多帧动画 / 氛围灯 / 颜色校准"
 readme = "docs/README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -28,7 +28,10 @@ audio = ["sounddevice>=0.4", "soundfile>=0.12"]
 pixelbar = "pixelbar.cli:main"
 
 [project.urls]
-Documentation = "https://opengameart.org/content/24x32-peppercarrot-characters"
+Homepage = "https://github.com/lankongtongmeng/dsh-pixelbar-studio"
+Repository = "https://github.com/lankongtongmeng/dsh-pixelbar-studio"
+Source = "https://github.com/lankongtongmeng/dsh-pixelbar-studio"
+"素材来源" = "https://opengameart.org/content/24x32-peppercarrot-characters"
 
 [tool.setuptools]
 packages = ["pixelbar"]

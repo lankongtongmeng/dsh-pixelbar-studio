@@ -13,7 +13,7 @@ function check(label, got, want) {
 
 check('导出的 cordis name', name, 'pixelbar-studio')
 check('inject 含 tools', inject.includes('tools'), true)
-check('工具数', TOOLS.length, 9)
+check('工具数', TOOLS.length, 11)
 
 // 用假 ctx 走一遍 apply，确认注册路径可用
 const registered = []

@@ -10,6 +10,7 @@
     sprite    精灵表切片 + 行走场景合成（视差背景、无缝循环）
     chars     二次元角色动画库（声明式配方 anims.json 驱动）
     faces     表情库（烧进 category，运行时瞬时切换）
+    color     颜色校准（这块屏 R 通道弱、B 偏强，含红的颜色要补偿）
     audio     把 PixelBar 当声卡播放
     doctor    启动预检（依赖 / 字体 / 素材 / 设备链路）
 
@@ -37,9 +38,9 @@
 素材署名：``gifs/oga/`` 的角色美术来自 David Revoy 的 Pepper&Carrot，
 授权 **CC-BY 4.0 / 3.0，二次分发须署名**（见 ``chars.CREDIT``）。
 """
-from . import (audio, chars, doctor, faces, protocol, render, sprite,  # noqa: F401
-               wire)
+from . import (audio, chars, color, doctor, faces, protocol, render,  # noqa: F401
+               sprite, wire)
 
 __all__ = ["protocol", "wire", "render", "sprite", "chars", "faces",
-           "audio", "doctor"]
-__version__ = "1.1.0"
+           "color", "audio", "doctor"]
+__version__ = "1.2.0"

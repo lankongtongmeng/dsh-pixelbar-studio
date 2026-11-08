@@ -11,7 +11,7 @@
 
 ```bash
 python pixelbar.py doctor      # ① 预检：依赖 / 字体 / 素材 / 设备链路，逐项给修法
-python pixelbar.py selftest    # ② 离线自检：52 项，含官方抓包逐字节复现编码器
+python pixelbar.py selftest    # ② 离线自检：72 项，含官方抓包逐字节复现编码器
 python pixelbar.py status      # ③ 看设备：确认插的是数据线、能读到像素屏状态
 ```
 
@@ -307,7 +307,7 @@ HID 写返回 -1，`status` 也超时。
 ```bash
 # 启动
 python pixelbar.py doctor                      # 预检（唯一入口）
-python pixelbar.py selftest                    # 离线自检 52 项
+python pixelbar.py selftest                    # 离线自检 72 项
 python pixelbar.py status                      # 设备状态
 
 # 看素材

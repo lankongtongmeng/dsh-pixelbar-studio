@@ -85,16 +85,22 @@ python pixelbar.py text "你好，花再"
 
 | 命令 | 说明 |
 |---|---|
+| `color <RRGGBB>` | 屏幕主题色（**默认套颜色校准表**；`--no-calib` 发原始值） |
+| `calib` | 打印颜色校准表（这块屏 R 弱 B 强，含红的颜色要补偿） |
+| `calib --card` | 推标准色卡，对着电脑屏幕目测重校准 |
 | `light <效果>` | 氛围灯：`breathing color_tide static ripple flow dynamic` |
 | `light-power on\|off` | 氛围灯总开关 |
 | `volume [等级]` | 查询/设置硬件音量 |
+| `restore-clock <秒>` | N 秒后切回时钟（`--clock-after` 内部就用它） |
+
+> 任何推送命令都可以加 `--clock-after SEC`：推完 N 秒自动让位给时钟，当通知用很方便。
 
 ### 诊断
 
 | 命令 | 说明 |
 |---|---|
 | `doctor` | **启动预检**：依赖 / 字体 / 素材 / 设备链路，每项都给修法（`--offline` 跳过设备） |
-| `selftest` | 离线自检（52 项，含官方抓包逐字节复现） |
+| `selftest` | 离线自检（72 项，含官方抓包逐字节复现） |
 | `status` | 查询设备状态 |
 | `decode <文件>` | 把 .bin / blob 反解成预览图 |
 | `replay --capture 23` | 原样回放官方抓包，验证链路 |

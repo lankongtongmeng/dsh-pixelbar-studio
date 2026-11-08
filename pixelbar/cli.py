@@ -5,12 +5,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
+import subprocess
 import sys
 import time
 
 from . import audio as au
 from . import chars as ch
+from . import color as co
 from . import doctor as dr
 from . import faces as fc
 from . import protocol as px
@@ -38,6 +41,29 @@ def _dummy_json(data):
     return p
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
+
+
+def _spawn_clock_after(seconds: float, style: int = 1) -> None:
+    """起一个**脱离本进程**的子进程，N 秒后切回时钟。
+
+    为什么不用线程 / 定时器：CLI 是短命进程，``main()`` 一返回就退出，
+    线程和定时器会跟着一起消失。所以必须让子进程脱离父进程
+    （Windows: ``DETACHED_PROCESS`` + ``CREATE_NO_WINDOW``；POSIX: ``start_new_session``），
+    并且不弹黑框。
+    """
+    script = HERE / "pixelbar.py"
+    cmd = [sys.executable, str(script), "restore-clock", f"{seconds:g}", "--style", str(style)]
+    kwargs: dict = {
+        "cwd": str(HERE),
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+    }
+    if os.name == "nt":
+        kwargs["creationflags"] = (getattr(subprocess, "DETACHED_PROCESS", 0)
+                                   | getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    else:
+        kwargs["start_new_session"] = True
+    subprocess.Popen(cmd, **kwargs)
 
 
 def parse_rgb(s: str):
@@ -226,6 +252,37 @@ def cmd_selftest(_a) -> int:
     check("doctor 有检查项", len(rep.items) >= 5, True)
     check("doctor 报告有结论", "结论：" in rep.render(), True)
 
+    # 10) 颜色校准表（这块屏 R 通道弱、B 偏强，含红的颜色要补偿）
+    check("默认粉校准到 #FF6080", co.calibrate_hex("#F0B4C8"), "#FF6080")
+    check("黄色校准到 #FF8800", co.calibrate_hex("#FFFF00"), "#FF8800")
+    check("未列出的颜色原样通过", co.calibrate_hex("#123456"), "#123456")
+    check("hex 归一化（小写 / 缺 #）", co.calibrate_hex("f0b4c8"), "#FF6080")
+    check("calibrate 返回三元组", co.calibrate((0xF0, 0xB4, 0xC8)), (0xFF, 0x60, 0x80))
+    check("蓝色是恒等映射", co.calibrate((0, 0, 0xFF)), (0, 0, 0xFF))
+    check("describe 说明已补偿", "补偿" in co.describe((0xF0, 0xB4, 0xC8)), True)
+    check("describe 说明未命中锚点", "原样" in co.describe((0x12, 0x34, 0x56)), True)
+    # 校准表**不是幂等的**：黄 #FFFF00 -> #FF8800，而 #FF8800 又是橙的锚点 -> #FF6000。
+    # 这是两次独立目测测量的自然结果，不是 bug；但意味着**只能应用一次**。
+    # 下面这条断言把这条链固定住，将来改表时会立刻被提醒。
+    check("校准表非幂等（黄落在橙的锚点上）",
+          co.calibrate(co.calibrate((0xFF, 0xFF, 0x00))), (0xFF, 0x60, 0x00))
+
+    # 11) 推完自动回时钟 / 颜色校准的**参数结构**（只查解析器，不真的排程、不碰设备）
+    ap = build_parser()
+    subs = [a for a in ap._actions if isinstance(a, argparse._SubParsersAction)][0]
+
+    def _opts(name):
+        return {o for act in subs.choices[name]._actions for o in act.option_strings}
+
+    for name in ("image", "anim", "border", "text-bitmap", "anims"):
+        check(f"{name} 支持 --clock-after", "--clock-after" in _opts(name), True)
+    for name in ("color", "light", "scene", "clock"):
+        check(f"{name} 支持 --no-calib", "--no-calib" in _opts(name), True)
+    check("restore-clock 收秒数",
+          "seconds" in {a.dest for a in subs.choices["restore-clock"]._actions}, True)
+    check("calib 有 --card",
+          "--card" in _opts("calib"), True)
+
     print("\n自检：", "全部通过" if ok else "存在失败")
     return 0 if ok else 1
 
@@ -271,9 +328,12 @@ def cmd_text(a) -> int:
 
 
 def cmd_scene(a) -> int:
+    rgb = a.rgb if a.no_calib else co.calibrate(a.rgb)
     with _dev() as dev:
-        px.show_scene(dev, a.scene, a.option, a.rgb)
+        px.show_scene(dev, a.scene, a.option, rgb)
         print(f"场景 -> {a.scene} (槽位 {a.option})")
+        if not a.no_calib and tuple(rgb) != tuple(a.rgb):
+            print(f"  颜色 {co.describe(a.rgb)}")
         time.sleep(0.3)
         st = px.get_pixel_state(dev)
         if st:
@@ -282,8 +342,9 @@ def cmd_scene(a) -> int:
 
 
 def cmd_clock(a) -> int:
+    rgb = a.rgb if a.no_calib else co.calibrate(a.rgb)
     with _dev() as dev:
-        px.show_clock(dev, a.n, a.rgb)
+        px.show_clock(dev, a.n, rgb)
         print(f"时钟样式 {a.n}/{px.CLOCK_STYLES}")
     return 0
 
@@ -297,16 +358,19 @@ def cmd_spectrum(a) -> int:
 
 
 def cmd_color(a) -> int:
+    rgb = a.rgb if a.no_calib else co.calibrate(a.rgb)
     with _dev() as dev:
-        px.set_screen_color(dev, a.rgb)
-        print(f"屏幕主题色 -> {a.rgb}")
+        px.set_screen_color(dev, rgb)
+        print(f"屏幕主题色 {co.describe(a.rgb) if not a.no_calib else a.rgb}")
     return 0
 
 
 def cmd_light(a) -> int:
+    rgb = a.rgb if a.no_calib else co.calibrate(a.rgb)
     with _dev() as dev:
-        px.set_ambient(dev, a.effect, a.rgb, a.brightness, a.speed)
-        print(f"氛围灯 -> {a.effect} rgb={a.rgb} 亮度={a.brightness} 速度={a.speed}")
+        px.set_ambient(dev, a.effect, rgb, a.brightness, a.speed)
+        print(f"氛围灯 -> {a.effect} 亮度={a.brightness} 速度={a.speed}")
+        print(f"  颜色 {co.describe(a.rgb) if not a.no_calib else a.rgb}")
     return 0
 
 
@@ -314,6 +378,43 @@ def cmd_light_power(a) -> int:
     with _dev() as dev:
         px.set_ambient_power(dev, a.action == "on")
         print(f"氛围灯 {'开' if a.action == 'on' else '关'}")
+    return 0
+
+
+def cmd_calib(a) -> int:
+    if not a.card:
+        print("像素屏颜色校准表（目标色 -> 实际发到屏上的值）")
+        for k in sorted(co.CALIBRATION):
+            print(f"  {k} -> {co.CALIBRATION[k]}")
+        print(f"\n来源：{co.SOURCE}")
+        print("屏特性：R 通道增益偏低、B 偏强 → 含红的颜色偏青/偏紫")
+        print("没列出的颜色**原样发送**（不做插值：插值没有实测依据，可能更糟）")
+        print("自己重测：pixelbar calib --card，对照电脑屏幕看偏差后改 pixelbar/color.py")
+        return 0
+    dwell = max(1.0, float(a.dwell))
+    with _dev() as dev:
+        total = len(co.COLOR_CARD) * dwell
+        print(f"色卡开始：{len(co.COLOR_CARD)} 色 × {dwell:g}s ≈ {total:g}s")
+        print("对照电脑屏幕看偏差；改 pixelbar/color.py 的 CALIBRATION 后重跑")
+        for name, hexc in co.COLOR_CARD:
+            px.set_screen_color(dev, co.calibrate_hex(hexc))
+            px.show_text(dev, name, align="center")
+            print(f"  {name}  {hexc}")
+            time.sleep(dwell)
+        px.set_screen_color(dev, co.calibrate(px.DEFAULT_RGB))
+        px.show_scene(dev, "clock")
+        print("色卡结束，已恢复默认屏色 + 时钟")
+    return 0
+
+
+def cmd_restore_clock(a) -> int:
+    """睡 N 秒后切回时钟。主要供 ``--clock-after`` 以脱离进程的方式调用。"""
+    delay = max(0.0, float(a.seconds))
+    if delay:
+        time.sleep(delay)
+    with _dev() as dev:
+        px.show_clock(dev, a.style)
+    print(f"{delay:g} 秒后已切回时钟（样式 {a.style}）")
     return 0
 
 
@@ -854,31 +955,46 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("scene", choices=list(px.SCENES))
     p.add_argument("--option", type=int, default=0)
     p.add_argument("--rgb", type=parse_rgb, default=px.DEFAULT_RGB)
+    p.add_argument("--no-calib", action="store_true", help="跳过颜色校准，发原始 RGB")
     p.set_defaults(func=cmd_scene)
 
     p = sub.add_parser("clock", help="内置时钟样式")
     p.add_argument("n", type=int, choices=range(1, px.CLOCK_STYLES + 1))
     p.add_argument("--rgb", type=parse_rgb, default=px.DEFAULT_RGB)
+    p.add_argument("--no-calib", action="store_true", help="跳过颜色校准，发原始 RGB")
     p.set_defaults(func=cmd_clock)
 
     p = sub.add_parser("spectrum", help="内置频谱样式")
     p.add_argument("style", type=int, choices=[1, 2, 3, 4])
     p.set_defaults(func=cmd_spectrum)
 
-    p = sub.add_parser("color", help="屏幕主题色")
+    p = sub.add_parser("color", help="屏幕主题色（默认套颜色校准表）")
     p.add_argument("rgb", type=parse_rgb)
+    p.add_argument("--no-calib", action="store_true", help="跳过颜色校准，发原始 RGB")
     p.set_defaults(func=cmd_color)
 
-    p = sub.add_parser("light", help="氛围灯")
+    p = sub.add_parser("light", help="氛围灯（默认套颜色校准表）")
     p.add_argument("effect", choices=list(px.EFFECTS))
     p.add_argument("--rgb", type=parse_rgb, default=(0x66, 0xAF, 0xFF))
     p.add_argument("--brightness", choices=list(px.BRIGHTNESS), default="high")
     p.add_argument("--speed", type=int, default=5)
+    p.add_argument("--no-calib", action="store_true", help="跳过颜色校准，发原始 RGB")
     p.set_defaults(func=cmd_light)
 
     p = sub.add_parser("light-power", help="氛围灯开关")
     p.add_argument("action", choices=["on", "off"])
     p.set_defaults(func=cmd_light_power)
+
+    p = sub.add_parser("calib", help="颜色校准表 / 推色卡做目测重校准")
+    p.add_argument("--card", action="store_true", help="把标准色卡轮流推到屏上（目测对比用）")
+    p.add_argument("--dwell", type=float, default=4.0, help="色卡每色停留秒数（默认 4）")
+    p.set_defaults(func=cmd_calib)
+
+    p = sub.add_parser("restore-clock", help="N 秒后切回时钟（--clock-after 内部就用它）")
+    p.add_argument("seconds", type=float, help="等待秒数")
+    p.add_argument("--style", type=int, default=1,
+                   choices=range(1, px.CLOCK_STYLES + 1), help="时钟样式（默认 1）")
+    p.set_defaults(func=cmd_restore_clock)
 
     p = sub.add_parser("volume", help="硬件音量")
     p.add_argument("level", nargs="?", type=int)
@@ -918,11 +1034,13 @@ def build_parser() -> argparse.ArgumentParser:
     # --- 位图 ---
     def add_push_args(p):
         p.add_argument("--category", type=int, default=2,
-                       help="场景类别（1游戏 2办公 3阅读 4猫 5狗 6热词 7赛博）")
+                       help="场景类别（2办公 3阅读 4猫 5狗 6热词；7赛博是死槽、写了不显示）")
         p.add_argument("--option", type=int, default=0, help="槽位")
         p.add_argument("--delay", type=int, default=wr.DEFAULT_DELAY, help="帧间隔 ms")
         p.add_argument("--preview", default="preview.png", help="预览图输出路径")
         p.add_argument("--dry", action="store_true", help="只编码不推送")
+        p.add_argument("--clock-after", type=float, default=0.0, metavar="SEC",
+                       help="推完 N 秒后自动切回时钟（0=不回）。当通知用很方便")
 
     p = sub.add_parser("image", help="推一张图片")
     p.add_argument("file")
@@ -1003,6 +1121,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--preview", help="预览图路径")
     p.add_argument("--list", action="store_true", help="只列出映射")
     p.add_argument("--dry", action="store_true")
+    p.add_argument("--clock-after", type=float, default=0.0, metavar="SEC",
+                   help="推完 N 秒后自动切回时钟（0=不回）")
     p.set_defaults(func=cmd_anims)
 
     return ap
@@ -1011,7 +1131,14 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        return args.func(args) or 0
+        rc = args.func(args) or 0
     except RuntimeError as e:
         print(f"错误：{e}", file=sys.stderr)
         return 1
+    # 「推完自动回时钟」统一在这里挂钩子，省得每个推送命令各写一遍。
+    # --dry 不排程：没有真推，回时钟没有意义。
+    after = float(getattr(args, "clock_after", 0) or 0)
+    if rc == 0 and after > 0 and not getattr(args, "dry", False):
+        _spawn_clock_after(after)
+        print(f"已安排 {after:g} 秒后切回时钟")
+    return rc

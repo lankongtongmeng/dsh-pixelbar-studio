@@ -1,7 +1,7 @@
 # dsh-pixelbar-studio
 
 把**花再 Halo PixelBar** 的 256×32 点阵屏变成 DSH 里可创作的画布——
-推自定义位图、GIF 动画、像素角色行走场景、点阵表情，并带环境自检与制作管线。
+推自定义位图、GIF 动画、像素角色行走场景、点阵表情，并带颜色校准、环境自检与制作管线。
 
 > 独立社区项目，与漫步者（EDIFIER）无关联。设备标识 `VID 0x2D99 / PID 0xA106`（A106 面板）。
 
@@ -9,23 +9,29 @@
 
 同一台设备上已经有一个 DSH 插件
 [SilverlingFox/dsh-pixelbar](https://github.com/SilverlingFox/dsh-pixelbar)，做的是
-**文字 / 场景 / 屏色 / 氛围灯 / 音量 / 推完回时钟**。两者**不冲突，也不重复**：
+**文字 / 场景 / 屏色 / 氛围灯 / 音量 / 推完回时钟**。两者**不冲突**：
 
 | | `dsh-pixelbar` | **本插件** |
 | --- | --- | --- |
-| 定位 | 通知与灯控 | **创作与内容** |
+| 定位 | 通知与灯控 | **创作与内容**（也覆盖基础控制） |
 | 推文字 | ✅ | ✅（自渲染，支持中文点阵） |
-| 内置场景 / 屏色 / 氛围灯 / 音量 | ✅ | — |
+| 内置场景 / 时钟 / 频谱 | ✅ | ✅ |
+| 屏色 / 氛围灯 / 音量 | ✅ | ✅（**屏色与灯色自动套颜色校准**） |
+| 推完自动回时钟 | ✅（默认 15s） | ✅（默认不回，见下） |
 | **自定义位图（`0x17`）** | ❌ | ✅ |
 | **GIF → 点阵动画** | ❌ | ✅ |
 | **精灵表 / 多角色行走场景** | ❌ | ✅ |
 | **声明式动画配方 + 导出 GIF** | ❌ | ✅ |
 | 表情槽位 | ❌ | ✅ |
+| **颜色校准表 + 色卡重校准** | ✅（有校准） | ✅（可自己重测） |
 | 制作管线 / 环境自检 | ❌ | ✅ |
 
 **社区所有开源实现（SDK / 插件 / 歌词工具）都无法推自定义位图或动画**，这是本插件的核心增量。
 
 > 两个插件会写同一个 HID 设备，**不建议同时跑**。只装一个即可。
+
+**关于「推完自动回时钟」的默认值**：本插件默认**不回**（`clock_after: 0`），因为它是创作工具
+——你推上去的动画应该留在屏上。当通知用就显式传 `clock_after: 15`。
 
 ## 能力
 
@@ -34,6 +40,9 @@
 - **角色动画**：精灵表切片 → 多角色同屏 + 背景无缝滚动；切换只要约 2ms
 - **表情**：6 种点阵表情，一次性烧入、运行时瞬时切换
 - **制作管线**：`make` / `sheet` 看结构、出预览、导出 GIF（导出会把 CC-BY 署名写进 GIF）
+- **颜色校准**：这块屏 **R 通道增益弱、B 偏强**，含红的颜色直接发会偏青/偏紫 →
+  屏色 / 场景色 / 氛围灯色默认自动查表补偿；`calib --card` 可推色卡自己重测
+- **推完自动回时钟**：`--clock-after SEC` 让内容 N 秒后自动让位给时钟（脱离式子进程实现）
 - **环境自检**：`doctor` 逐项检查依赖 / 字体 / 素材 / 设备链路，**每项给修法**
 - **硬件 EQ**：音箱自带的 19 种音效模式
 
@@ -85,6 +94,8 @@ npm install dsh-pixelbar-studio
 | `pixelbar_make` | 一键制作：GIF 或精灵表 → 预览 / 导出 GIF / 上机 |
 | `pixelbar_sheet` | 看精灵表结构、逐行内容尺寸、预览某一行走起来什么样 |
 | `pixelbar_faces` | 表情：list / switch / burn / demo |
+| `pixelbar_device` | 基础控制：屏色 / 场景 / 时钟 / 频谱 / 氛围灯 / 音量 |
+| `pixelbar_calib` | 颜色校准表；`card` 推色卡做目测重校准 |
 | `pixelbar_eq` | 音箱自带的 19 种硬件音效模式 |
 | `pixelbar_text` | 把文字自渲染成点阵（支持中文、多行） |
 
@@ -93,10 +104,13 @@ npm install dsh-pixelbar-studio
 ```
 pixelbar_doctor {}
 pixelbar_show  { "file": "D:\\pic\\cat.gif", "category": 2, "preview": "D:\\pic\\preview.png" }
+pixelbar_show  { "file": "D:\\pic\\note.png", "clock_after": 15 }
 pixelbar_anim  { "action": "list" }
 pixelbar_anim  { "action": "switch", "name": "duo" }
 pixelbar_make  { "source": "D:\\art\\hero.png", "row": 0, "preview": "D:\\art\\p.png" }
 pixelbar_text  { "lines": ["在"], "cjk": true }
+pixelbar_device { "action": "color", "rgb": "F0B4C8" }
+pixelbar_calib { "card": true, "dwell": 3 }
 ```
 
 **先预览、再上机。** 不指定 `category` 时 `pixelbar_make` 只在本地出预览与导出，
@@ -113,6 +127,10 @@ pixelbar_text  { "lines": ["在"], "cjk": true }
 
 - **屏幕内容无法读回。** 官方查询函数只返回配置，`0xEE` 只能确认类别/槽位。
   所以**无法程序化验证「图有没有写进去」**，只能靠人眼看屏，或推 `border` 满边框自检图。
+- **颜色校准只做精确匹配、不做插值。** 校准值是目测实测的锚点，没命中的颜色原样发送
+  （插值没有实测依据，可能比不校准更糟）。想覆盖更多颜色就用 `calib --card` 自己重测。
+  ⚠️ 校准表**不是幂等的**（黄 `#FFFF00`→`#FF8800`，而 `#FF8800` 又是橙的锚点），
+  所以**只能应用一次**——CLI 里只在设置颜色那一步做一次。
 - **`category 7` 是死槽**：写进去会回落到设备原生动画，自定义图不显示。可用的是 2–6。
   （`pixelbar_faces` 的 `celebrate` 落在 7，属已知遗留问题。）
 - **固件可能卡死在数据接收态**：连推多个多帧动画时若 ACK 块号错位会卡死，表现是设备
@@ -131,7 +149,7 @@ pixelbar_text  { "lines": ["在"], "cjk": true }
 | --- | --- |
 | [docs/PITFALLS.md](docs/PITFALLS.md) | **踩坑与经验包**（协议 / 渲染 / 素材 / 工具链 / 音频 / 方法论） |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | 制作流程 SOP（启动 → 选素材 → 制作 → 上机 → 验证） |
-| [docs/README.md](docs/README.md) | 命令行工具包完整手册（24 个子命令） |
+| [docs/README.md](docs/README.md) | 命令行工具包完整手册（26 个子命令） |
 | [docs/PROTOCOL.md](docs/PROTOCOL.md) | 协议细节（以此为准） |
 | [docs/REFERENCES.md](docs/REFERENCES.md) | 来源分级、方法论复盘、与社区的相对位置 |
 | [NOTICE.md](NOTICE.md) | 第三方署名与授权 |
@@ -139,15 +157,18 @@ pixelbar_text  { "lines": ["在"], "cjk": true }
 本插件自带的 Python 工具包也可以**脱离 DSH 单独用**：
 
 ```powershell
-run.cmd                 :: 无参数 = 环境预检
-run.cmd selftest        :: 52 项离线自检（不连设备）
-run.cmd anims --list    :: 列出动画
+run.cmd                    :: 无参数 = 环境预检
+run.cmd selftest           :: 72 项离线自检（不连设备）
+run.cmd anims --list       :: 列出动画
+run.cmd calib              :: 打印颜色校准表
+run.cmd image cat.png --clock-after 15   :: 推图，15 秒后自动回时钟
 ```
 
 ## 许可与署名
 
 - 本仓库代码：**MIT**（见 [LICENSE](LICENSE)）
 - **Pepper&Carrot 角色素材：CC-BY 4.0/3.0，作者 David Revoy，必须署名**（见 [NOTICE.md](NOTICE.md)）
+- 颜色校准表：来自 `SilverlingFox/dsh-pixelbar`（MIT）的目测校准数据
 - 5×7 字库：MIT（`3441293738/claude-edifier-pixelbar-usage`）
 - 自检用官方抓包 OUT 帧：MIT（`ethan71950701/PixelBar-Display-Hook`）
 

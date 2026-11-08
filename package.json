@@ -1,7 +1,7 @@
 {
   "name": "dsh-pixelbar-studio",
-  "version": "0.1.0",
-  "description": "DSH 插件：把花再 Halo PixelBar 的 256×32 点阵屏变成可创作画布——推自定义位图、GIF 动画、像素角色行走场景，带环境自检与制作管线。",
+  "version": "0.2.0",
+  "description": "DSH 插件：把花再 Halo PixelBar 的 256×32 点阵屏变成可创作画布——推自定义位图、GIF 动画、像素角色行走场景，带颜色校准、环境自检与制作管线。",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
